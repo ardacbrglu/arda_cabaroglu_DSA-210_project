@@ -1,5 +1,4 @@
-# arda_cabaroglu_DSA-210_project
-Project for DSA 210 
+# Arda Cabaroglu Project for DSA 210 
 
 Hello my name is Arda Cabaroglu (32270) For this project, i want to explore how my physical activity levels, specifically the calories i burn each day, fluctuate during my midterm examination periods. 
 
