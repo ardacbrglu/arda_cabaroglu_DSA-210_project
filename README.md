@@ -14,5 +14,5 @@ Data collected from my Apple Watch, specifically the calories burned each day fo
 5) Statistical Analysis: I will perform correlation analysis to determine if there is a strong relationship between the calorie expenditure during regular weeks and midterm weeks.
 
 
-Goal
+## Goal
 My primary goal is to see if there is a notable difference in my pyhsical activity levels during my midterm exam periods.
