@@ -23,10 +23,10 @@ The data is recorded automatically by my Apple Watch and synchronized with the H
    
 3) Use the python library "Beautiful Soup" to parse XML and extract relevant calorie and step count data
    
-4) Exploratory Data Analysis (EDA):
-  -Use Pandas to clean and structure the data.
-  -Explore the distribution of active energy calorie expenditure and step counts.
-  -Identify trends or anomalies during midterm weeks compared to regular weeks.
+4) Exploratory Data Analysis (EDA); 
+  -> Use Pandas to clean and structure the data.
+  -> Explore the distribution of active energy calorie expenditure and step counts.
+  -> Identify trends or anomalies during midterm weeks compared to regular weeks.
    
 7) Visualization: Use libraries such as Matplotlib to create visualizations to highlight changes in daily active energy calorie expenditure, and the step count.
    
