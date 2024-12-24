@@ -30,7 +30,7 @@ The data is recorded automatically by my Apple Watch and synchronized with the H
    
 7) Visualization: Use libraries such as Matplotlib to create visualizations to highlight changes in daily active energy calorie expenditure, and the step count.
    
-8) Statistical Analysis: I will perform correlation analysis to determine if there is a strong relationship between the calorie expenditure during regular weeks and midterm weeks and show the change in step counts compared to last year.
+8) Statistical Analysis: I will perform correlation analysis to determine if there is a strong relationship between the calorie expenditure during regular weeks and midterm weeks and show the change in step counts compared to last year due to changes in academic workload.
 
 ## Goal
 My primary goal is to determine if there is a notable change in my physical activity levels, reflected through active energy calorie expenditure and step counts, during midterm exam periods compared to regular weeks. Additionally, I aim to illustrate the impact of a more demanding academic workload this semester on my step counts by comparing them to last year's data, when my courses were less intensive.
