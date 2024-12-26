@@ -1,4 +1,5 @@
-code so far: 
+This is my implementattion of the code on parsing and producing the graphs (not finishehd)
+
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
