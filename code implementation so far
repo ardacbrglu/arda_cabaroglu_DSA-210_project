@@ -1,5 +1,8 @@
 This is my implementattion of the code on parsing and producing the graphs (not finishehd)
 
+
+
+
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,7 +23,7 @@ with open(file_path, "r", encoding="utf-8") as file:
 # Parse the XML content
 soup = BeautifulSoup(content, "xml")
 
-# Step 4: Extract Active Energy and Step Count Data
+# Step 4: Extract relevant data
 records = []
 for record in soup.find_all("Record"):
     try:
@@ -28,7 +31,12 @@ for record in soup.find_all("Record"):
         start_date = record.get("startDate")
         value = float(record.get("value")) if record.get("value") else None
         if record_type and start_date and value is not None:
-            if record_type in ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierActiveEnergyBurned"]:
+            if record_type in [
+                "HKQuantityTypeIdentifierStepCount",
+                "HKQuantityTypeIdentifierActiveEnergyBurned",
+                "HKQuantityTypeIdentifierFlightsClimbed",
+                "HKQuantityTypeIdentifierAppleStandHours"
+            ]:
                 records.append({"type": record_type, "date": start_date, "value": value})
     except (AttributeError, ValueError):
         continue
@@ -40,36 +48,136 @@ df = pd.DataFrame(records)
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 df.dropna(subset=["date"], inplace=True)
 
-# Separate data into Active Energy and Step Count
+# Separate data by type
 active_energy_df = df[df["type"] == "HKQuantityTypeIdentifierActiveEnergyBurned"]
 step_count_df = df[df["type"] == "HKQuantityTypeIdentifierStepCount"]
+floors_climbed_df = df[df["type"] == "HKQuantityTypeIdentifierFlightsClimbed"]
+stand_hours_df = df[df["type"] == "HKQuantityTypeIdentifierAppleStandHours"]
 
 # Aggregate data by date
 active_energy_per_day = active_energy_df.groupby(active_energy_df["date"].dt.date)["value"].sum()
 step_count_per_day = step_count_df.groupby(step_count_df["date"].dt.date)["value"].sum()
+floors_climbed_per_day = floors_climbed_df.groupby(floors_climbed_df["date"].dt.date)["value"].sum()
+stand_hours_per_day = stand_hours_df.groupby(stand_hours_df["date"].dt.date)["value"].sum()
+
+# Ensure indices are datetime for consistent reindexing
+active_energy_per_day.index = pd.to_datetime(active_energy_per_day.index)
+step_count_per_day.index = pd.to_datetime(step_count_per_day.index)
+floors_climbed_per_day.index = pd.to_datetime(floors_climbed_per_day.index)
+stand_hours_per_day.index = pd.to_datetime(stand_hours_per_day.index)
+
+# Focus on the last 40-45 days for active energy data
+if not active_energy_per_day.empty:
+    active_energy_last_40_days = active_energy_per_day.tail(45)
+    if not active_energy_last_40_days.empty:
+        active_energy_last_40_days = active_energy_last_40_days.reindex(
+            pd.date_range(
+                start=active_energy_last_40_days.index.min(),
+                end=active_energy_last_40_days.index.max(),
+                freq="D"
+            ),
+            fill_value=active_energy_last_40_days.mean()
+        )
+    else:
+        print("Insufficient active energy data for the last 45 days.")
+else:
+    print("No active energy data available.")
+
+# Focus on the last 40-45 days for step count data
+if not step_count_per_day.empty:
+    step_count_last_40_days = step_count_per_day.tail(45)
+    if not step_count_last_40_days.empty:
+        step_count_last_40_days = step_count_last_40_days.reindex(
+            pd.date_range(
+                start=step_count_last_40_days.index.min(),
+                end=step_count_last_40_days.index.max(),
+                freq="D"
+            ),
+            fill_value=step_count_per_day.mean()
+        )
+    else:
+        print("Insufficient step count data for the last 45 days.")
+else:
+    print("No step count data available.")
+
+# Focus on the last 40-45 days for standing hours data
+if not stand_hours_per_day.empty:
+    stand_hours_last_40_days = stand_hours_per_day.tail(45)
+    if not stand_hours_last_40_days.empty:
+        stand_hours_last_40_days = stand_hours_last_40_days.reindex(
+            pd.date_range(
+                start=stand_hours_last_40_days.index.min(),
+                end=stand_hours_last_40_days.index.max(),
+                freq="D"
+            ),
+            fill_value=stand_hours_last_40_days.mean()
+        )
+    else:
+        print("Insufficient standing hours data for the last 45 days.")
+else:
+    print("No standing hours data available.")
+
+# Floors climbed data for semesters
+floors_climbed_current_semester = floors_climbed_per_day.loc[floors_climbed_per_day.index > pd.Timestamp("2024-09-01")]
+floors_climbed_previous_semester = floors_climbed_per_day.loc[(floors_climbed_per_day.index > pd.Timestamp("2024-02-01")) & (floors_climbed_per_day.index <= pd.Timestamp("2024-06-30"))]
+floors_climbed_two_semesters_ago = floors_climbed_per_day.loc[(floors_climbed_per_day.index > pd.Timestamp("2023-09-01")) & (floors_climbed_per_day.index <= pd.Timestamp("2024-01-31"))]
 
 # Step 6: Visualization
 
-# Active Energy Graph
-plt.figure(figsize=(12, 6))
-plt.plot(active_energy_per_day.index, active_energy_per_day.values, marker='o', color='orange', label="Active Energy")
-plt.title("Daily Active Energy (Calories Burned)")
-plt.xlabel("Date")
-plt.ylabel("Calories Burned")
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.tight_layout()
-plt.legend()
-plt.show()
+# Active Energy (Last 40-45 Days)
+if not active_energy_per_day.empty:
+    plt.figure(figsize=(12, 6))
+    plt.plot(active_energy_last_40_days.index, active_energy_last_40_days.values, label="Active Energy", color="orange", marker="o")
+    plt.title("Active Energy (Last 40-45 Days)")
+    plt.xlabel("Date")
+    plt.ylabel("Calories Burned")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
-# Step Count Graph
-plt.figure(figsize=(12, 6))
-plt.plot(step_count_per_day.index, step_count_per_day.values, marker='o', color='blue', label="Step Count")
-plt.title("Daily Step Count")
-plt.xlabel("Date")
-plt.ylabel("Steps")
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.tight_layout()
-plt.legend()
-plt.show()
+# Step Count (Last 40-45 Days)
+if not step_count_per_day.empty:
+    plt.figure(figsize=(12, 6))
+    plt.plot(step_count_last_40_days.index, step_count_last_40_days.values, label="Step Count", color="blue", marker="o")
+    plt.title("Step Count (Last 40-45 Days)")
+    plt.xlabel("Date")
+    plt.ylabel("Steps")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# Floors Climbed (Semesters)
+if not floors_climbed_per_day.empty:
+    plt.figure(figsize=(12, 6))
+    plt.plot(floors_climbed_current_semester.index, floors_climbed_current_semester.values, label="Current Semester", color="green", marker="o")
+    plt.plot(floors_climbed_previous_semester.index, floors_climbed_previous_semester.values, label="Previous Semester", color="blue", marker="o")
+    plt.plot(floors_climbed_two_semesters_ago.index, floors_climbed_two_semesters_ago.values, label="Two Semesters Ago", color="red", marker="o")
+    plt.title("Floors Climbed (Semesters)")
+    plt.xlabel("Date")
+    plt.ylabel("Floors Climbed")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# Standing Hours (Last 40-45 Days)
+if not stand_hours_last_40_days.empty:
+    plt.figure(figsize=(12, 6))
+    plt.plot(stand_hours_last_40_days.index, stand_hours_last_40_days.values, label="Standing Hours", color="purple", marker="o")
+    plt.title("Standing Hours (Last 40-45 Days)")
+    plt.xlabel("Date")
+    plt.ylabel("Hours")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+else:
+    print("No standing hours data available for visualization.")
+
+
