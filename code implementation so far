@@ -2,182 +2,323 @@ This is my implementattion of the code on parsing and producing the graphs (not 
 
 
 
-
-import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
-# Step 1: Specify the updated file path
-file_path = r"C:\Users\Cabaroglu\Desktop\apple_health_export\health_data.xml"
+# ========================================
+# 1) Mock Parsing (Replace with real logic)
+# ========================================
+def parse_health_xml(xml_path):
+    """
+    Simulates reading Apple Health data.
+    Returns a DataFrame with columns:
+      [date, steps, floors, active_energy, standing_hours].
+    Replace this with your real BeautifulSoup parser for 'export.xml'.
+    """
+    np.random.seed(42)
+    # Example date range
+    date_range = pd.date_range(start="2022-09-01", end="2025-01-31", freq='D')
+    df_mock = pd.DataFrame({
+        'date': date_range,
+        'steps': np.random.randint(1000, 15000, len(date_range)),
+        'floors': np.random.randint(0, 25, len(date_range)),
+        'active_energy': np.random.randint(200, 700, len(date_range)),
+        'standing_hours': np.random.randint(4, 16, len(date_range))
+    })
+    return df_mock
 
-# Step 2: Check if the file exists
-if not os.path.exists(file_path):
-    raise FileNotFoundError(f"File not found at: {file_path}. Please check the path and try again.")
+# ==========================================
+# 2) Five Corrected Semesters (Time Intervals)
+# ==========================================
+def get_semesters():
+    """
+    Returns a list of (semester_label, start_date, end_date):
+      Prep:        2022-09-28 -> 2023-01-15
+      Freshman1:   2023-02-27 -> 2023-06-11
+      Freshman2:   2023-10-02 -> 2024-01-19
+      Sophomore1:  2024-02-15 -> 2024-06-10
+      Sophomore2:  2024-09-23 -> 2025-01-08
+    """
+    return [
+        ("Prep",         datetime(2022, 9, 28), datetime(2023, 1, 15)),
+        ("Freshman1",    datetime(2023, 2, 27), datetime(2023, 6, 11)),
+        ("Freshman2",    datetime(2023, 10, 2), datetime(2024, 1, 19)),
+        ("Sophomore1",   datetime(2024, 2, 15), datetime(2024, 6, 10)),
+        ("Sophomore2",   datetime(2024, 9, 23), datetime(2025, 1, 8)),
+    ]
 
-# Step 3: Parse the XML file
-print(f"Parsing the file: {file_path}")
-with open(file_path, "r", encoding="utf-8") as file:
-    content = file.read()
+# =========================================================
+# 3) Define Exam Days (Midterm1, Midterm2, Finals)
+# =========================================================
+midterm1 = [
+    datetime(2024, 11,  2),   # cs303
+    datetime(2024, 11,  3),   # math204
+    datetime(2024, 11, 10),   # dsa210
+    datetime(2024, 11, 16),   # cs204
+    datetime(2024, 11, 18),   # fin401
+]
 
-# Parse the XML content
-soup = BeautifulSoup(content, "xml")
+midterm2 = [
+    datetime(2024, 12,  1),   # math204
+    datetime(2024, 12,  7),   # cs204
+    datetime(2024, 12, 14),   # cs303
+]
 
-# Step 4: Extract relevant data
-records = []
-for record in soup.find_all("Record"):
-    try:
-        record_type = record.get("type")
-        start_date = record.get("startDate")
-        value = float(record.get("value")) if record.get("value") else None
-        if record_type and start_date and value is not None:
-            if record_type in [
-                "HKQuantityTypeIdentifierStepCount",
-                "HKQuantityTypeIdentifierActiveEnergyBurned",
-                "HKQuantityTypeIdentifierFlightsClimbed",
-                "HKQuantityTypeIdentifierAppleStandHours"
-            ]:
-                records.append({"type": record_type, "date": start_date, "value": value})
-    except (AttributeError, ValueError):
-        continue
+finals = [
+    datetime(2025, 1,  2),    # dsa210
+    datetime(2025, 1,  3),    # cs303
+    datetime(2025, 1,  4),    # math204
+    datetime(2025, 1,  5),    # fin401
+    datetime(2025, 1,  7),    # cs204
+]
 
-# Step 5: Convert to DataFrame
-df = pd.DataFrame(records)
+def check_week_exam_type(week_end_date):
+    """
+    For a given weekly index date (which is typically the END of the resampled week),
+    we define the start as week_end_date - 6 days.
+    Then check if any day in [week_start, week_end] belongs to midterm1, midterm2, or finals.
+    Returns a list of exam type strings: ["M1", "M2", "Final"] if relevant.
+    """
+    week_start = week_end_date - timedelta(days=6)
+    # We'll collect exam types
+    exam_types = []
 
-# Convert 'date' to datetime
-df["date"] = pd.to_datetime(df["date"], errors="coerce")
-df.dropna(subset=["date"], inplace=True)
+    # Check if any midterm1 day is in [week_start, week_end]
+    for day in midterm1:
+        if week_start <= day <= week_end_date:
+            if "M1" not in exam_types:
+                exam_types.append("M1")
 
-# Separate data by type
-active_energy_df = df[df["type"] == "HKQuantityTypeIdentifierActiveEnergyBurned"]
-step_count_df = df[df["type"] == "HKQuantityTypeIdentifierStepCount"]
-floors_climbed_df = df[df["type"] == "HKQuantityTypeIdentifierFlightsClimbed"]
-stand_hours_df = df[df["type"] == "HKQuantityTypeIdentifierAppleStandHours"]
+    # Check midterm2
+    for day in midterm2:
+        if week_start <= day <= week_end_date:
+            if "M2" not in exam_types:
+                exam_types.append("M2")
 
-# Aggregate data by date
-active_energy_per_day = active_energy_df.groupby(active_energy_df["date"].dt.date)["value"].sum()
-step_count_per_day = step_count_df.groupby(step_count_df["date"].dt.date)["value"].sum()
-floors_climbed_per_day = floors_climbed_df.groupby(floors_climbed_df["date"].dt.date)["value"].sum()
-stand_hours_per_day = stand_hours_df.groupby(stand_hours_df["date"].dt.date)["value"].sum()
+    # Check finals
+    for day in finals:
+        if week_start <= day <= week_end_date:
+            if "Final" not in exam_types:
+                exam_types.append("Final")
 
-# Ensure indices are datetime for consistent reindexing
-active_energy_per_day.index = pd.to_datetime(active_energy_per_day.index)
-step_count_per_day.index = pd.to_datetime(step_count_per_day.index)
-floors_climbed_per_day.index = pd.to_datetime(floors_climbed_per_day.index)
-stand_hours_per_day.index = pd.to_datetime(stand_hours_per_day.index)
+    return exam_types
 
-# Focus on the last 40-45 days for active energy data
-if not active_energy_per_day.empty:
-    active_energy_last_40_days = active_energy_per_day.tail(45)
-    if not active_energy_last_40_days.empty:
-        active_energy_last_40_days = active_energy_last_40_days.reindex(
-            pd.date_range(
-                start=active_energy_last_40_days.index.min(),
-                end=active_energy_last_40_days.index.max(),
-                freq="D"
-            ),
-            fill_value=active_energy_last_40_days.mean()
-        )
-    else:
-        print("Insufficient active energy data for the last 45 days.")
-else:
-    print("No active energy data available.")
+# =====================================================================
+# 4) Weekly Histograms for Steps & Floors (with exam color labeling)
+# =====================================================================
+def plot_weekly_by_semester(df, value_col="steps", title="Weekly Steps by Semester"):
+    """
+    One figure with 5 "groups" on the x-axis (one per semester).
+    Inside each group are bars for each week's average of 'value_col'.
 
-# Focus on the last 40-45 days for step count data
-if not step_count_per_day.empty:
-    step_count_last_40_days = step_count_per_day.tail(45)
-    if not step_count_last_40_days.empty:
-        step_count_last_40_days = step_count_last_40_days.reindex(
-            pd.date_range(
-                start=step_count_last_40_days.index.min(),
-                end=step_count_last_40_days.index.max(),
-                freq="D"
-            ),
-            fill_value=step_count_per_day.mean()
-        )
-    else:
-        print("Insufficient step count data for the last 45 days.")
-else:
-    print("No step count data available.")
+    If the bar's date range includes any exam day => color it brown,
+    and label above it with "M1", "M2", "Final" (or combination).
+    Otherwise use normal color from color palette.
+    """
+    semesters = get_semesters()
 
-# Focus on the last 40-45 days for standing hours data
-if not stand_hours_per_day.empty:
-    stand_hours_last_40_days = stand_hours_per_day.tail(45)
-    if not stand_hours_last_40_days.empty:
-        stand_hours_last_40_days = stand_hours_last_40_days.reindex(
-            pd.date_range(
-                start=stand_hours_last_40_days.index.min(),
-                end=stand_hours_last_40_days.index.max(),
-                freq="D"
-            ),
-            fill_value=stand_hours_last_40_days.mean()
-        )
-    else:
-        print("Insufficient standing hours data for the last 45 days.")
-else:
-    print("No standing hours data available.")
-
-# Floors climbed data for semesters
-floors_climbed_current_semester = floors_climbed_per_day.loc[floors_climbed_per_day.index > pd.Timestamp("2024-09-01")]
-floors_climbed_previous_semester = floors_climbed_per_day.loc[(floors_climbed_per_day.index > pd.Timestamp("2024-02-01")) & (floors_climbed_per_day.index <= pd.Timestamp("2024-06-30"))]
-floors_climbed_two_semesters_ago = floors_climbed_per_day.loc[(floors_climbed_per_day.index > pd.Timestamp("2023-09-01")) & (floors_climbed_per_day.index <= pd.Timestamp("2024-01-31"))]
-
-# Step 6: Visualization
-
-# Active Energy (Last 40-45 Days)
-if not active_energy_per_day.empty:
     plt.figure(figsize=(12, 6))
-    plt.plot(active_energy_last_40_days.index, active_energy_last_40_days.values, label="Active Energy", color="orange", marker="o")
-    plt.title("Active Energy (Last 40-45 Days)")
-    plt.xlabel("Date")
-    plt.ylabel("Calories Burned")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
+    ax = plt.gca()
+
+    group_gap = 2.0  
+    current_x = 0.0  
+
+    x_ticks = []
+    x_labels = []
+
+    # Distinct colors for 5 terms if no exam day
+    default_colors = ["blue", "green", "orange", "purple", "red"]
+
+    for i, (sem_label, start_date, end_date) in enumerate(semesters):
+        # Filter DF for this semester
+        mask = (df['date'] >= start_date) & (df['date'] <= end_date)
+        df_sem = df.loc[mask, ['date', value_col]].copy()
+
+        if df_sem.empty:
+            x_ticks.append(current_x)
+            x_labels.append(f"{sem_label}\n(No Data)")
+            current_x += group_gap
+            continue
+
+        df_sem.set_index('date', inplace=True)
+        # Weekly average
+        weekly = df_sem.resample('W').mean(numeric_only=True)
+
+        # Fill missing
+        mean_val = weekly[value_col].mean()
+        weekly[value_col] = weekly[value_col].fillna(mean_val)
+
+        week_count = len(weekly)
+        x_positions = np.arange(week_count) + current_x
+        bar_values = weekly[value_col].values
+
+        for bar_idx, (week_end, val) in enumerate(weekly[value_col].items()):
+            # Determine if we have exam(s) in this weekly interval
+            exam_list = check_week_exam_type(week_end)  # returns e.g. ["M1","M2"]
+
+            if len(exam_list) > 0:
+                # This bar includes an exam => color it brown
+                color = "brown"
+            else:
+                # Use default color for this semester
+                color = default_colors[i]
+
+            x_pos = x_positions[bar_idx]
+            # Draw bar
+            rect = ax.bar(x_pos, val, color=color, width=0.8)[0]
+
+            # If exam, label above bar
+            if exam_list:
+                label_str = ",".join(exam_list)
+                ax.text(x_pos, val, label_str,
+                        ha='center', va='bottom', color='brown', rotation=0)
+
+        # Middle of the group for labeling
+        midpoint = current_x + (week_count - 1) / 2 if week_count > 0 else current_x
+        x_ticks.append(midpoint)
+        x_labels.append(sem_label)
+
+        current_x += (week_count + group_gap)
+
+    ax.set_title(title)
+    ax.set_ylabel(f"Weekly Avg {value_col.capitalize()}")
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_labels, rotation=0)
     plt.tight_layout()
     plt.show()
 
-# Step Count (Last 40-45 Days)
-if not step_count_per_day.empty:
-    plt.figure(figsize=(12, 6))
-    plt.plot(step_count_last_40_days.index, step_count_last_40_days.values, label="Step Count", color="blue", marker="o")
-    plt.title("Step Count (Last 40-45 Days)")
-    plt.xlabel("Date")
-    plt.ylabel("Steps")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
+# =====================================================================
+# 5) Daily Bar Charts (Active & Standing) [21 Nov 2024 -> 8 Jan 2025]
+#    with vertical lines for each exam date (labeled with course name)
+# =====================================================================
+def plot_daily_bars_with_exams(df, value_col, title, y_label, start_day, end_day):
+    """
+    Daily bar chart for 'value_col' in [start_day, end_day].
+    Missing days => fill with slice's mean.
+    X-axis labeled Day 1, Day 8, Day 15, etc. (step=7).
+    We draw vertical lines for each exam date, labeled with the *course name*.
+    """
+
+    # Course -> exam date
+    exam_dates = {
+        "dsa210": datetime(2025, 1, 2),
+        "cs303":  datetime(2025, 1, 3),
+        "math204":datetime(2025, 1, 4),
+        "fin401": datetime(2025, 1, 5),
+        "cs204":  datetime(2025, 1, 7),
+
+        "math204 (M2)": datetime(2024, 12, 1),
+        "cs204 (M2)":   datetime(2024, 12, 7),
+        "cs303 (M2)":   datetime(2024, 12, 14),
+
+        "cs204 (M1)":   datetime(2024, 11, 16),
+        "cs303 (M1)":   datetime(2024, 11, 2),
+        "fin401 (M1)":  datetime(2024, 11, 18),
+        "dsa210 (M1)":  datetime(2024, 11, 10),
+        "math204 (M1)": datetime(2024, 11, 3),
+    }
+
+    # Filter
+    mask = (df['date'] >= start_day) & (df['date'] <= end_day)
+    df_slice = df.loc[mask, ['date', value_col]].copy()
+
+    if df_slice.empty:
+        print(f"No data for {value_col} in [{start_day} -> {end_day}]")
+        return
+
+    # Reindex daily
+    all_days = pd.date_range(start=start_day, end=end_day, freq='D')
+    df_slice.set_index('date', inplace=True)
+    df_slice = df_slice.reindex(all_days)
+    df_slice.index.name = 'date'
+
+    # Fill missing with mean
+    mean_val = df_slice[value_col].mean()
+    df_slice[value_col] = df_slice[value_col].fillna(mean_val)
+
+    # X= 0..N-1
+    N = len(df_slice)
+    x_positions = np.arange(N)
+    bar_values = df_slice[value_col].values
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    ax.bar(x_positions, bar_values, color='blue', width=0.8)
+    ax.set_title(title)
+    ax.set_ylabel(y_label)
+
+    # Label x-axis as Day 1, Day 8, Day 15,... step=7
+    tick_indices = np.arange(0, N, 7)
+    tick_labels = [f"Day {i+1}" for i in tick_indices]
+    ax.set_xticks(tick_indices)
+    ax.set_xticklabels(tick_labels, rotation=0)
+
+    ax.set_xlabel(f"Days from {start_day.strftime('%Y-%m-%d')} to {end_day.strftime('%Y-%m-%d')}")
+
+    # For each exam date, if it's in [start_day, end_day], draw line & label with course name
+    for course_name, exam_date in exam_dates.items():
+        if start_day <= exam_date <= end_day:
+            x_idx = (exam_date - start_day).days
+            if 0 <= x_idx < N:
+                ax.axvline(x_idx, color='red', linestyle='--', linewidth=1.5)
+                # Put text just above the bar
+                ax.text(x_idx + 0.5, bar_values[x_idx], course_name,
+                        rotation=90, color='red', va='bottom', ha='left')
+
     plt.tight_layout()
     plt.show()
 
-# Floors Climbed (Semesters)
-if not floors_climbed_per_day.empty:
-    plt.figure(figsize=(12, 6))
-    plt.plot(floors_climbed_current_semester.index, floors_climbed_current_semester.values, label="Current Semester", color="green", marker="o")
-    plt.plot(floors_climbed_previous_semester.index, floors_climbed_previous_semester.values, label="Previous Semester", color="blue", marker="o")
-    plt.plot(floors_climbed_two_semesters_ago.index, floors_climbed_two_semesters_ago.values, label="Two Semesters Ago", color="red", marker="o")
-    plt.title("Floors Climbed (Semesters)")
-    plt.xlabel("Date")
-    plt.ylabel("Floors Climbed")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+# ===========
+# 6) Main
+# ===========
+def main():
+    df = parse_health_xml("export.xml")
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values(by='date', inplace=True)
 
-# Standing Hours (Last 40-45 Days)
-if not stand_hours_last_40_days.empty:
-    plt.figure(figsize=(12, 6))
-    plt.plot(stand_hours_last_40_days.index, stand_hours_last_40_days.values, label="Standing Hours", color="purple", marker="o")
-    plt.title("Standing Hours (Last 40-45 Days)")
-    plt.xlabel("Date")
-    plt.ylabel("Hours")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-else:
-    print("No standing hours data available for visualization.")
+    # 1) Weekly Steps by Semester (with exam-based color labeling)
+    plot_weekly_by_semester(
+        df,
+        value_col='steps',
+        title="Weekly Steps by Semester"
+    )
+
+    # 2) Weekly Floors by Semester (with exam-based color labeling)
+    plot_weekly_by_semester(
+        df,
+        value_col='floors',
+        title="Weekly Floors by Semester"
+    )
+
+    # 3) Daily Active Energy in [21 Nov 2024 -> 8 Jan 2025]
+    start_day = datetime(2024, 11, 21)
+    end_day   = datetime(2025, 1, 8)
+    plot_daily_bars_with_exams(
+        df,
+        value_col='active_energy',
+        title="Daily Active Energy (21 Nov 2024 -> 8 Jan 2025)",
+        y_label="Active Energy (kcal)",
+        start_day=start_day,
+        end_day=end_day
+    )
+
+    # 4) Daily Standing Hours in [21 Nov 2024 -> 8 Jan 2025]
+    plot_daily_bars_with_exams(
+        df,
+        value_col='standing_hours',
+        title="Daily Standing Hours (21 Nov 2024 -> 8 Jan 2025)",
+        y_label="Standing Hours (hours)",
+        start_day=start_day,
+        end_day=end_day
+    )
+
+    # No 5th graph per user request
+
+
+if __name__ == "__main__":
+    main()
+
 
 
