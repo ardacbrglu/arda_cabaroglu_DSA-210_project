@@ -45,9 +45,9 @@ The data is automatically recorded by my Apple Watch and synced with the Health 
    - Compare step counts, calorie data, floors climbed, and standing hours between periods to see how academic demands affect activity levels.
      
 6. **Hypothesis**
-Null Hypothesis (H₀): There is no significant difference in average step counts between the current semester (Sophomore 2) and previous semesters (Prep, Freshman 1, Freshman 2, and Sophomore 1).
+   - Null Hypothesis (H₀): There is no significant difference in average step counts between the current semester (Sophomore 2) and previous semesters (Prep, Freshman 1, Freshman 2, and Sophomore 1).
 
-Alternative Hypothesis (H₁): The average step counts in the current semester (Sophomore 2) are significantly lower than in previous semesters.
+   - Alternative Hypothesis (H₁): The average step counts in the current semester (Sophomore 2) are significantly lower than in previous semesters.
 
 ## Goal
 
