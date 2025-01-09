@@ -44,10 +44,11 @@ The data is automatically recorded by my Apple Watch and synced with the Health 
    - Check if there is a connection between academic workload and physical activity levels.
    - Compare step counts, calorie data, floors climbed, and standing hours between periods to see how academic demands affect activity levels.
      
-6. **Hypothesis**
-   - Null Hypothesis (H₀): There is no significant difference in average step counts between the current semester (Sophomore 2) and previous semesters (Prep, Freshman 1, Freshman 2, and Sophomore 1).
-
-   - Alternative Hypothesis (H₁): The average step counts in the current semester (Sophomore 2) are significantly lower than in previous semesters.
+6. **Hypothesis Testing**
+   Hypothesis:
+   - Null Hypothesis (H₀): There is no significant decrease in step count averages across semesters.
+   - Alternative Hypothesis (H₁): There is a significant decrease in step count averages across semesters due to increasing academic workload.
+  
 
 ## Goal
 
