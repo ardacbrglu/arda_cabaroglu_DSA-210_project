@@ -17,7 +17,7 @@ I will use data collected from my Apple Watch, focusing on:
 1. **Active Energy:** Calories burned daily during this a period of semester which includes midterm/final weeks and regular weeks.
 2. **Step Count:** Daily step counts collected since first year of school to see how activity levels change with academic workload.
 3. **Floors Climbed:** Data on the number of floors climbed each day to assess physical activity related to elevation.
-4. **Standing Hours:** Data on daily standing hours to indicate how much time is spent standing throughout the day.
+
 
 The data is automatically recorded by my Apple Watch and synced with the Health app on my iPhone. I will export this data as XML files from the Health app and use Python tools like Pandas and Beautiful Soup to process and analyze it.
 
@@ -34,18 +34,18 @@ The data is automatically recorded by my Apple Watch and synced with the Health 
 3. **Exploratory Data Analysis (EDA):**
 
    - Use Pandas to clean and organize the data.
-   - Check the patterns in calories burned, step counts, floors climbed, and standing hours.
+   - Check the patterns in calories burned, step counts, floors climbed.
    - Look for trends or unusual changes during midterm weeks and other periods.
 
 4. **Visualization:**
 
-   - Use Matplotlib to create charts showing changes in calories burned, step counts, floors climbed, and standing hours over time and across different periods.
+   - Use Matplotlib to create charts showing changes in calories burned, step counts, floors climbed over time and across different periods.
    - Indicate important dates of midterms/finals to see if there are any significiant changes on pyhyical activity.
 
 5. **Statistical Analysis:**
 
    - Check if there is a connection between academic workload and physical activity levels.
-   - Compare step counts, calorie data, floors climbed, and standing hours between periods to see how academic demands affect activity levels.
+   - Compare step counts, calorie data, floors climbed between periods to see how academic demands affect activity levels.
    - Use Hypothesis testing methods to see if there are actually significiant changes on activity levels.
      
 6. **Hypothesis Testing**
