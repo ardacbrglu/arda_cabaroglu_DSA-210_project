@@ -51,7 +51,10 @@ The data is automatically recorded by my Apple Watch and synced with the Health 
 6. **Hypothesis Testing**
    - Null Hypothesis (H₀): There is no significant decrease in step count averages across semesters.
    - Alternative Hypothesis (H₁): There is a significant decrease in step count averages across semesters due to increasing academic workload.
-  
+
+
+
+#note: you can see my findings, limitations and future work parts on the ppt slide.
 
 
 
