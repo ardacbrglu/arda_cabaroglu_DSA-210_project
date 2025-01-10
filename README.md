@@ -49,7 +49,6 @@ The data is automatically recorded by my Apple Watch and synced with the Health 
    - Use Hypothesis testing methods to see if there are actually significiant changes on activity levels.
      
 6. **Hypothesis Testing**
-   Hypothesis:
    - Null Hypothesis (H₀): There is no significant decrease in step count averages across semesters.
    - Alternative Hypothesis (H₁): There is a significant decrease in step count averages across semesters due to increasing academic workload.
   
